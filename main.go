@@ -257,5 +257,6 @@ func main() {
 		return nil
 	})
 
+	fmt.Println("hello")
 	app.Listen(":3000")
 }
