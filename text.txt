@@ -1,0 +1,108 @@
+Viết một chương trình tên là students_management (tạo project mới), bao gồm các chức năng sau:
+1. Tạo struct Provice để lưu thông tin của một tỉnh thành
+
+type Provice struct {
+  ID int
+  Name string
+}
+
+2. Seed thông tin tỉnh thành vào database với bảng: provinces
+- tạo bảng provinces chứa thông tin của các tỉnh thành: Sử dụng CREATE TABLE IF NOT EXISTS
+  + id: mã số tỉnh thành (PK, auto increment)
+  + name: tên tỉnh thành
+- Viết hàm seedProvinces làm 2 việc:
+  + Xóa toàn bộ dữ liệu của bảng provinces dùng TRUNCATE
+  + Đọc dữ liệu từ file provinces.csv và insert vào bảng provinces
+- Viết hàm GetAllProvices() để lấy thông tin của tất cả các tỉnh thành từ database
+  + trả về ([]*Provice, error)
+- Viết hàm GetProviceByID(id int) để lấy thông tin của một tỉnh thành từ database
+  + trả về (*Provice, error)
+
+3. Seed thông tin quốc vào database với bảng: countries
+- tạo bảng countries chứa thông tin của các quốc gia: Sử dụng CREATE TABLE IF NOT EXISTS
+  + id: PK, auto increment
+  + code: mã quốc gia - unique index
+  + name: tên quốc gia - unique index
+  + latitude: vĩ độ - float
+  + longitude: kinh độ - float
+  - Viết hàm GetAllCountriess() để lấy thông tin của tất cả các tỉnh thành từ database
+  + trả về ([]*Country, error)
+- Viết hàm GetCountryByID(id int) để lấy thông tin của một tỉnh thành từ database
+  + trả về (*Country, error)
+
+4. Liên kết 1-n: mỗi country có nhiều provinces
+  - Thêm cột country_id vào bảng provinces
+  - Tạo foreign key từ cột country_id trỏ tới bảng countries
+  - Sửa lại các seeder:
+    + Chạy seed countries trước
+    + Query lấy ra bản ghi tương ứng với country name = Vietnam
+    + Thêm vào struct Provice một trường CountryID
+    + Khi insert vào bảng provinces, thêm vào cột country_id giá trị tương ứng với country id của Vietnam
+
+Vieets file migration.go
+
+func migrate(db *sqlx.DB): 
+- drop table
+- create table
+- seed data
+
+5. Lấy dữ liệu 1-n từ database
+  - Viết hàm GetProvincesByCountryID(countryID int) để lấy thông tin của tất cả các tỉnh thành từ database
+    + trả về ([]*Provice, error)
+  - Sửa struct Province thêm trường Country để lưu thông tin của quốc gia
+    type Provice struct {
+      ID int
+      Name string
+      Country *Country
+    }
+  - Sửa struct Country thêm trường Provincé để lưu thông tin các tỉnh thuộc quốc gia đó
+    type Country struct {
+      ID int
+      Code string
+      Name string
+      Latitude float64
+      Longitude float64
+      Provinces []*Province
+    }
+  - Viêt hàm GetProvinceWithCountryByID(id int) để lấy thông tin của một tỉnh thành từ database
+    + trả về (*Provice, error)
+    + sử dụng join để lấy thông tin của quốc gia (lưu vào trường Country)
+  - Viết hàm GetCountryWithProvincesByID(id int) để lấy thông tin của một quốc gia từ database
+    + trả về (*Country, error)
+    + sử dụng join để lấy thông tin của tất cả các tỉnh thành thuộc quốc gia đó (lưu vào trường Provinces)
+  - Viêt hàm GetAllCountriesWithProvinces() để lấy thông tin của tất cả các quốc gia từ database
+    + trả về ([]*Country, error)
+    + sử dụng join để lấy thông tin của tất cả các tỉnh thành tương ứng với mỗi quốc gia (lưu vào trường Provinces)
+ 
+  - Viết hàm SearchProvinceByName(name string) để tìm tất cả tỉnh thành phù hợp từ database
+    + Sử dụng điều kiện LIKE để tìm kiếm
+    + trả về ([]*Provice, error)
+    + Tạo struct ProvinceWithCoutnry để lưu thông tin của tỉnh thành và quốc gia tương ứng
+      type ProvinceWithCoutnry struct {
+        id int: mã số tỉnh thành
+        name string: tên tỉnh thành
+        country_id int: mã số quốc gia
+        coutnry_name string: tên quốc gia
+      }
+    + sử dụng join để lấy thông tin của tỉnh thành và quốc gia, scan vào slice của ProvinceWithCoutnry
+    + sử dụng for để chuyển đổi từ struct ProvinceWithCoutnry sang struct Province
+
+6. Xử lý quan hệ n-n giữa sinh viên và quốc gia
+  - Tạo bảng (DB) và struct để lưu thông tin về student:
+    + id: mã số sinh viên (tự động tăng)
+    + name: tên sinh viên
+    + birth_year: năm sinh
+  - Sử dụng https://github.com/go-faker/faker để sinh dữ liệu giả cho sinh viên
+    + Tạo hàm seedStudents(n int) để sinh n sinh viên gỉa
+    + n là số lượng sinh viên cần tạo
+    + Chạy thử với n = 10000
+  - Thêm thông tin quốc tịch cho sinh viên
+    + Một sinh viên có thể thuộc về nhiều quốc gia (có nhiều quốc tịch)
+    + Một quốc gia có thể có nhiều sinh viên
+    + Liên kết với dữ liệu từ bảng countries có sẵn
+    + Thêm nationalities []*Country vào struct Student
+    + Thiết kế lại bảng CSDL để lưu thông tin quốc tịch của sinh viên
+  - Viết hàm GetStudentWithNationalities(id int) để lấy thông tin của một sinh viên từ database
+    + id là mã số sinh viên
+    + trả về (*Student, error)
+    + trong đó Student bao gồm các thông tin cơ bản và thông tin của tất cả các quốc gia mà sinh viên đó thuộc về
