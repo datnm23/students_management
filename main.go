@@ -29,30 +29,14 @@ func main() {
 	}
 
 	app := fiber.New()
+	
 	//Recover
 	app.Use(recover.New())
-	app.Get("/", func(c *fiber.Ctx) error {
+	app.Get("/panic", func(c *fiber.Ctx) error {
    	 panic("I'm an error")
 	})
 
-	//Logger
-	app.Use(logger.New())
-	app.Use(logger.New(logger.Config{
-	    Format: "[${ip}]:${port} ${status} - ${method} ${path}\n",
-	}))
-	
-	app.Use(requestid.New())
-	app.Use(logger.New(logger.Config{
-	    Format: "${pid} ${locals:requestid} ${status} - ${method} ${path}​\n",
-	}))
-
-	app.Use(logger.New(logger.Config{
-	    Format:     "${pid} ${status} - ${method} ${path}\n",
-	    TimeFormat: "02-Jan-2006",
-	    TimeZone:   "America/New_York",
-	}))
-	
-	file, err := os.OpenFile("./123.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	file, err := os.OpenFile("./app.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 	    log.Fatalf("error opening file: %v", err)
 	}
@@ -61,66 +45,13 @@ func main() {
 	    Output: file,
 	}))
 	
-	// Add Custom Tags
-	app.Use(logger.New(logger.Config{
-	    CustomTags: map[string]logger.LogFunc{
-	        "custom_tag": func(output logger.Buffer, c *fiber.Ctx, data *logger.Data, extraParam string) (int, error) {
-	            return output.WriteString("it is a custom tag")
-	        },
-	    },
-	}))
-	
-	// Callback after log is written
-	app.Use(logger.New(logger.Config{
-	    TimeFormat: time.RFC3339Nano,
-	    TimeZone:   "Asia/Shanghai",
-	    Done: func(c *fiber.Ctx, logString []byte) {
-	        if c.Response().StatusCode() != fiber.StatusOK {
-	            reporter.SendToSlack(logString) 
-	        }
-	    },
-	}))
-	
-	// Disable colors when outputting to default format
-	app.Use(logger.New(logger.Config{
-	    DisableColors: true,
-	}))
 	//Compress
 	app.Use(compress.New())
 	
-	app.Use(compress.New(compress.Config{
-	    Level: compress.LevelBestSpeed, // 1
-	}))
-
-	app.Use(compress.New(compress.Config{
-	  Next:  func(c *fiber.Ctx) bool {
-	    return c.Path() == "/dont_compress"
-	  },
-	  Level: compress.LevelBestSpeed, // 1
-	}))
-
 	//Cache
 	app.Use(cache.New())
 	
-	app.Use(cache.New(cache.Config{
-	    Next: func(c *fiber.Ctx) bool {
-	        return c.Query("noCache") == "true"
-	    },
-	    Expiration: 30 * time.Minute,
-	    CacheControl: true,
-	}))
-
-	//RequestID
-	app.Use(requestid.New())
-	
-	app.Use(requestid.New(requestid.Config{
-	    Header:    "X-Custom-Header",
-	    Generator: func() string {
-	        return "static-id"
-	    },
-	}))
-	
-	//etag
+	//Etag
 	app.Use(etag.New())
 	
 	app.Get("/", func(c *fiber.Ctx) error {
