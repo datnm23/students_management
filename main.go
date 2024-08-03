@@ -31,9 +31,6 @@ func main() {
 			return err
 		}
 
-		if err := c.BodyParser(p); err != nil {
-			panic(err)
-		}
 
 		spew.Dump(p)
 
@@ -55,12 +52,12 @@ func main() {
 		)
 
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		studentID, err := result.LastInsertId()
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		for _, id := range p.Nationalities {
@@ -84,14 +81,14 @@ func main() {
 		err := db.Select(&countries, "SELECT * FROM countries")
 
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		provinces := []*Province{}
 		err = db.Select(&provinces, `SELECT * FROM provinces`)
 
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		for _, country := range countries {
@@ -110,11 +107,11 @@ func main() {
 		pagenumber, err := strconv.Atoi(c.Query("page"))
 
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		if err := db.Select(&students, `SELECT * FROM students LIMIT ? OFFSET ?;`, limit, (pagenumber-1)*limit); err != nil {
-			panic(err)
+			return err
 		}
 
 		var result string
@@ -144,13 +141,13 @@ func main() {
 
 		if err = db.Select(&studentWithCountries,
 			idqueries); err != nil {
-			panic(err)
+			return err
 		}
 
 		countries := []*Country{}
 
 		if err = db.Select(&countries, `SELECT DISTINCT * FROM countries`); err != nil {
-			panic(err)
+			return err
 		}
 
 		for _, student := range students {
@@ -171,7 +168,7 @@ func main() {
 		pagination, err := Pagination(limit)
 
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		return c.JSON(map[string]any{
@@ -184,13 +181,13 @@ func main() {
 		p := new(Student)
 
 		if err := c.BodyParser(p); err != nil {
-			panic(err)
+			return err
 		}
 
 		id, err := strconv.Atoi(c.Params("id"))
 
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		tx := db.MustBegin()
@@ -199,7 +196,7 @@ func main() {
 			`DELETE FROM students_with_country 
 			WHERE student_id = ?;`,
 			id); err != nil {
-			panic(err)
+			return err
 		}
 
 		if _, err = tx.Exec(
@@ -213,7 +210,7 @@ func main() {
 				birth_year=? 
 			WHERE id = ?;`,
 			p.FirstName, p.LastName, p.Sex, p.PhoneNumber, p.Falcuty, p.BirthYear, id); err != nil {
-			panic(err)
+			return err
 		}
 
 		for _, studentcountries := range p.Nationalities {
@@ -222,7 +219,7 @@ func main() {
 					student_id,
 					student_nationalities_id)
 				VALUES (?, ?);`, id, studentcountries.ID); err != nil {
-				panic(err)
+				return err
 			}
 		}
 
@@ -234,7 +231,7 @@ func main() {
 		id, err := strconv.Atoi(c.Params("id"))
 
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		tx := db.MustBegin()
@@ -243,20 +240,19 @@ func main() {
 			`DELETE FROM students_with_country 
 			WHERE student_id = ?;`,
 			id); err != nil {
-			panic(err)
+			return err
 		}
 
 		if _, err := tx.Exec(
 			`DELETE FROM students 
 			WHERE id = ?;`,
 			id); err != nil {
-			panic(err)
+			return err
 		}
 
 		tx.Commit()
 		return nil
 	})
 
-	fmt.Println("hello")
 	app.Listen(":3000")
 }
