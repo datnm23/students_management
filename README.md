@@ -35,13 +35,6 @@ By default, the server will start on `http://localhost:3000`.
 - **URL:** `/api/students`
 - **Method:** `POST`
 - **Description:** Adds a new student.
-- **Request Body:**
-
-  `{
-  "name": "John Doe",
-  "age": 21,
-  "country": "USA"
-}`
 
 ### Get All Countries
 
@@ -60,13 +53,6 @@ By default, the server will start on `http://localhost:3000`.
 - **URL:** `/api/students/:id`
 - **Method:** `PUT`
 - **Description:** Updates the information of an existing student.
-- **Request Body:**
-
-  `{
-  "name": "Jane Doe",
-  "age": 22,
-  "country": "Canada"
-}`
 
 ### Delete a Student
 
